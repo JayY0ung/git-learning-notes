@@ -35,3 +35,19 @@ git commit --amend 文件名 -m "更新后的提交信息"   # 对刚刚的提�
 git push origin master  # 推送版本库至服务器
 git clone demo demo-copy  # 备份
 ```
+
+# Git 暂存区
+
+## 1. 区分工作区、暂存区和版本库之间文件差异
+
+```bash
+git diff    # 工作区与提交暂存区中文件相比的差异
+git diff HEAD     # 工作区与HEAD（当前工作分支）中文件相比的差异
+git diff --staged   # 提交暂存区和版本库中文件的差异
+```
+
+## 2. 搁置问题，暂存状态
+
+```bash
+git stash     # 保存当前工作进度，待其它先处理事件完成后再回来
+```
