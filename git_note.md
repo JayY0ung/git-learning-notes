@@ -159,3 +159,75 @@ git reset HEAD^   #  工作区不改变，但是暂存区和引用会回退一�
 git reset --mix HEAD^   # 同上
 git reset --hard HEAD^    # 彻底撤销最近的提交
 ```
+
+# Git 检出
+
+_Git 检出命令的实质就是修改 HEAD 本身的指向，而不影响分支“游标”_
+
+## 1. HEAD 的重置即检出
+
+```bash
+# 检出到该ID，此刻会导致分离头指针
+git checkout ID
+```
+
+> 什么叫“分离头指针”？
+>
+> 分离头指针状态指的就是 HEAD 头指针指向了一个具体的提交 ID，而不是一个引用分支。
+
+_`git checkout` 和 `git reset` 命令不同，分支的指向并没有改变，仍旧指向原有的提交 ID。_
+
+> 以下例子说明检出的一些特征和特点
+
+```bash
+# 检出至父提交
+git checkout HEAD^
+
+# 该结果显示发现HEAD与master指向不同
+git rev-parse HEAD master
+
+touch detached-commit.txt
+git add detached-commit.txt
+git commit -m "commit in detached HEAD mode."
+
+# 此时可看到新的提交是建立在之前的提交基础上的
+cat .git/HEAD
+```
+
+_由于这个提交没有宝贝任何分支跟踪到，因此并不能保证这个提交会永久存在_
+
+## 2. 挽救分离头指针
+
+```bash
+# 将不处于任何分支下的提交合并到当前分支中，也保证了当前分支原先提交进入版本库管理
+git merge ID
+```
+
+## 3. 深入了解 git checkout 命令
+
+> 检出命令用法如下：
+>
+> 用法一： `git checkout [<commit>] [--] <paths>...`
+>
+> 用法二： `git checkout [<branch>]`
+>
+> 用法三： `git checkout [-b <new_branch>] [<start_point>]`
+
+> 第一种用法不会改变 HEAD 头指针，但 commit 是可选项。如果省略则相当于从暂存区进行检出，覆盖工作区。如果不省略，该 commit 会覆盖对应文件的工作区和暂存区。这个和重置命令不同，重置到默认值是 HEAD，而检出到默认值是暂存区。
+>
+> 第二种用法则会改变 HEAD 头指针，后面带参数 branch 表示切换到一个分支，只有这样才可以对提交进行跟踪，否则仍然进入“分离头指针”状态。此方法最主要的作用是切换到分支。如果省略 branch 参数，则相当于对工作区进行状态检查。
+>
+> 第三种用法主要是创建和切换到新的分支，新的分支从 start_point 指定的提交开始创建。
+
+_以下命令非常危险，慎用！_
+
+```bash
+# 暂存区中filename文件覆盖工作区的filename文件，导致本地的修改会悄无声息的覆盖
+git checkout -- filename
+
+# 用branch所指向的提交中的filename替换暂存区和工作区中相应的filename文件
+git checkout branch -- filename
+
+# 用暂存区的所有文件覆盖本地文件，不给确认机会！
+git checkout -- .
+```
