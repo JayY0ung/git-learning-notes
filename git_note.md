@@ -3,11 +3,20 @@
 ## 1. 基本设置
 
 ```bash
-git --version   # 查看Git版本
-git config --global user.name "John Kelly"  # 全局配置中设置用户名
-git config --global user.email "johnkelly@hotmail.com"  # 全局配置中设置邮件地址
-git config --global color.ui true       # Git命令输出中开启颜色显示
-git config --unset --global user.name   # 删除Git全局配置文件中的用户名设置
+# 查看Git版本
+git --version
+
+# 全局配置中设置用户名
+git config --global user.name "John Kelly"
+
+# 全局配置中设置邮件地址
+git config --global user.email "johnkelly@hotmail.com"
+
+# Git命令输出中开启颜色显示
+git config --global color.ui true
+
+# 删除Git全局配置文件中的用户名设置
+git config --unset --global user.name
 ```
 
 ## 2. 版本库初始化并完成第一次提交
@@ -15,25 +24,50 @@ git config --unset --global user.name   # 删除Git全局配置文件中的用�
 _进入需版本控制的目录后，执行以下命令_
 
 ```bash
-git init  # 初始化
-git add 文件名  # 也可以使用 . 或 -A 添加当前工作区的全部待加入暂存区文件
-git commit -m '提交说明'  # 提交说明是必须的
+# 初始化
+git init
+
+# 也可以使用 . 或 -A 添加当前工作区的全部待加入暂存区文件
+git add 文件名
+
+# 提交说明是必须的
+git commit -m '提交说明'
 ```
 
 ## 3. 其它常用命令
 
 ```bash
 git grep "工作区文件内容搜索"
-git status -s   # 精简格式的状态输出
-git log -l  # 查看提交记录
-git rev-parse --git-dir # 显示版本库.git目录所在位置
-git rev-parse --show-toplever   # 显示工作区根目录
-git rev-parse --show-prefix   # 相对于工作区根目录的相对目录
-git rev-parse --show-cdup   # 显示从当前目录后退到工作区的根的深度
-git commit --allow-empty -m "允许执行空白提交"  # Git默认不会提交工作区未做任何修改的提交
-git commit --amend 文件名 -m "更新后的提交信息"   # 对刚刚的提交进行修补
-git push origin master  # 推送版本库至服务器
-git clone demo demo-copy  # 备份
+
+# 精简格式的状态输出
+git status -s
+
+# 查看提交记录
+git log -l
+
+# 显示版本库.git目录所在位置
+git rev-parse --git-dir
+
+# 显示工作区根目录
+git rev-parse --show-toplever
+
+# 相对于工作区根目录的相对目录
+git rev-parse --show-prefix
+
+# 显示从当前目录后退到工作区的根的深度
+git rev-parse --show-cdup
+
+# Git默认不会提交工作区未做任何修改的提交
+git commit --allow-empty -m "允许执行空白提交"
+
+# 对刚刚的提交进行修补
+git commit --amend 文件名 -m "更新后的提交信息"
+
+# 推送版本库至服务器
+git push origin master
+
+# 备份
+git clone demo demo-copy
 ```
 
 # Git 暂存区
@@ -44,15 +78,21 @@ git clone demo demo-copy  # 备份
 ## 1. 区分工作区、暂存区和版本库之间文件差异
 
 ```bash
-git diff            # 工作区与提交暂存区中文件相比的差异
-git diff HEAD       # 工作区与HEAD（当前工作分支）中文件相比的差异
-git diff --staged   # 提交暂存区和版本库中文件的差异
+# 工作区与提交暂存区中文件相比的差异
+git diff
+
+# 工作区与HEAD（当前工作分支）中文件相比的差异
+git diff HEAD
+
+# 提交暂存区和版本库中文件的差异
+git diff --staged
 ```
 
 ## 2. 搁置问题，暂存状态
 
 ```bash
-git stash       # 保存当前工作进度，待其它先处理事件完成后再回来
+# 保存当前工作进度，待其它先处理事件完成后再回来
+git stash
 ```
 
 # Git 对象
@@ -60,14 +100,18 @@ git stash       # 保存当前工作进度，待其它先处理事件完成后�
 ## 1. Git 对象库探秘
 
 ```bash
-git log -1 --pretty=raw     # 查看日志详尽输出
+# 查看日志详尽输出
+git log -1 --pretty=raw
 ```
 
 _研究 Git 对象 ID 的一个重量级武器就是 `git cat-file` 命令_
 
 ```bash
-git cat-file -t id    # 查看对象ID的类型
-git cat-file -p id    # 查看对象ID的内容
+# 查看对象ID的类型
+git cat-file -t id
+
+# 查看对象ID的内容
+git cat-file -p id
 ```
 
 > 通过提交对象之间的相互关联，可以清楚的显示一条跟踪链，可通过
@@ -75,9 +119,14 @@ git cat-file -p id    # 查看对象ID的内容
 > 提交没有 _parent_ 属性，所以跟踪链到此终结。
 
 ```bash
-git status -s -b    # 查看工作区和暂存区是否有改动
-git branch          # 显示当前的工作分支
-git rev-parse master 或 HEAD 或 refs/head/master  # 显示引用对应的提交ID
+# 查看工作区和暂存区是否有改动
+git status -s -b
+
+# 显示当前的工作分支
+git branch
+
+# 显示引用对应的提交ID
+git rev-parse master 或 HEAD 或 refs/head/master
 ```
 
 _在当前版本库中，HEAD、master、refs/heads/master 具有相同的指向_
@@ -101,7 +150,8 @@ _引用 master 就好像是一个游标，在有新的提交发生时指向新�
 **慎用下一条命令**
 
 ```bash
-git reset --hard HEAD^    # 将 master 重置到上一个父提交上，会破坏工作区未提交的改动
+# 将 master 重置到上一个父提交上，会破坏工作区未提交的改动
+git reset --hard HEAD^
 ```
 
 ## 2. 用 reflog 挽救错误的重置
@@ -114,7 +164,7 @@ _如果没有记下重置前 master 分支指向的提交 ID，想要重置回�
 git reflog show master | head -5
 ```
 
-_此命令行的输出将最新改变日志放在了最前面显示，还提供了一个方便易记的表达式：<refname>@{<n>}，该表达式的含义是引用<refname>之前第<n>次改变时的哈希值。如，_
+_此命令行的输出将最新改变日志放在了最前面显示，还提供了一个方便易记的表达式：`<refname>@{<n>}`，该表达式的含义是引用`<refname>`之前第`<n>`次改变时的哈希值。如，_
 
 ```bash
 git reset --hard master@{2}
@@ -130,11 +180,11 @@ _重置命令是 Git 最常用的命令之一，也是最危险最容易误用�
 >
 > 用法二: `git reset [--soft | --mixed | --hard] [-q] [<commit>]`
 
-_其中【commit】都是可选项，可以使用引用或提交 ID，如果省略~~commit~~，则相当于使用了 HEAD 的指向作为提交 ID。_
+_其中 commit 都是可选项，可以使用引用或提交 ID，如果省略~~commit~~，则相当于使用了 HEAD 的指向作为提交 ID。_
 
-_两种用法的区别在于，第一种用法在命令中包含路径【paths】。为避免路径和引用同名而发生冲突，可在【paths】前用两个连续的短线作为分隔。_
+_两种用法的区别在于，第一种用法在命令中包含路径 paths。为避免路径和引用同名而发生冲突，可在 paths 前用两个连续的短线作为分隔。_
 
-> 第一种用法不会重置引用，更不会改变工作区，而是用指定提交状态【commit】下的文件【paths】替换掉暂存区中的文件。如，`git reset HEAD <paths>` 相当于取消之前执行的 `git add <paths>` 命令时改变的暂存区。
+> 第一种用法不会重置引用，更不会改变工作区，而是用指定提交状态 commit 下的文件 paths 替换掉暂存区中的文件。如，`git reset HEAD <paths>` 相当于取消之前执行的 `git add <paths>` 命令时改变的暂存区。
 >
 > 第二种用法则会重置引用。根据不同的选项，可以对暂存区或工作区进行重置。
 >
@@ -150,14 +200,29 @@ _两种用法的区别在于，第一种用法在命令中包含路径【paths�
 _重置命令的不同用法_
 
 ```bash
-git reset   # 仅用 HEAD 指向的目录树重置暂存区，引用也未改变因引用重置到 HEAD，相当于没有重置
-git reset HEAD    # 同上
-git reset -- filename   # 仅将文件filename的改动撤出暂存区，暂存区中其他文件不变
-git reset HEAD filename   # 同上
-git reset --soft HEAD^    # 工作区和暂存区不变，但引用向前回退一次。当对最新提交的提交说明或提交的更改不满意时，撤销最新的提交以便重新提交。与 `git commit --amend` 类似，但不同于它。
-git reset HEAD^   #  工作区不改变，但是暂存区和引用会回退一次
-git reset --mix HEAD^   # 同上
-git reset --hard HEAD^    # 彻底撤销最近的提交
+# 仅用 HEAD 指向的目录树重置暂存区，引用也未改变因引用重置到 HEAD，相当于没有重置
+git reset
+
+ # 同上
+git reset HEAD
+
+# 仅将文件filename的改动撤出暂存区，暂存区中其他文件不变
+git reset -- filename
+
+# 同上
+git reset HEAD filename
+
+# 工作区和暂存区不变，但引用向前回退一次。当对最新提交的提交说明或提交的更改不满意时，撤销最新的提交以便重新提交。与 `git commit --amend` 类似，但不同于它。
+git reset --soft HEAD^
+
+# 工作区不改变，但是暂存区和引用会回退一次
+git reset HEAD^
+
+# 同上
+git reset --mix HEAD^
+
+# 彻底撤销最近的提交
+git reset --hard HEAD^
 ```
 
 # Git 检出
