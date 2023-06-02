@@ -296,3 +296,58 @@ git checkout branch -- filename
 # 用暂存区的所有文件覆盖本地文件，不给确认机会！
 git checkout -- .
 ```
+
+# 恢复进度
+
+## 1. 继续暂存区未完成的实践
+
+```bash
+# 查看保存的进度
+git stash list
+
+# 从最近保存的进度恢复
+git stash pop
+
+# 删除本地多余的(未被跟踪的)目录和文件，测试避免误删
+git clean -nd
+
+# 强制删除本地多余的(未被跟踪的)目录和文件
+git clean -fd
+```
+
+## 2. 使用 `git stash`
+
+```bash
+# 保存当前工作进度，分别对暂存区和工作区的状态进行保存
+git stash
+
+# 不使用任何参数，会恢复最新保存的工作进度，并删除恢复的进度列表。如果提供stash参数，则从该stash中恢复，并从进度列表中删除stash
+git stash pop [--index] [<stash>]
+
+# 对保存工作进度的指定说明，便于通过进度列表找到保存的进度。必须如下
+git stash save 'message'
+
+# 除了不删除恢复的进度之外，其余和 `git stash pop`命令一样
+git stash apply [--index] [<stash>]
+
+# 删除一个存储的进度，默认删除最新的进度
+git stash drop [<stash>]
+
+# 删除所有存储的进度
+git stash clear
+
+# 基于进度创建分支
+git stash branch <branchname> <stash>
+```
+
+## 3. 探秘 `git stash`
+
+_没有被版本控制系统跟踪的文件并不能保存进度。_
+
+_`git stash`就是用引用和引用变更日志(reflog)来实现的_
+
+```bash
+ls -l .git/refs/stash .git/logs/refs/stash
+```
+
+_提交说明中有 WIP（work in progress），代表了工作区进度。而有 index on master 字样的提交，代表了暂存区的进度。每个进度的标识都是 `stash@{<n>}`_
