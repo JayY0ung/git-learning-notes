@@ -351,3 +351,74 @@ ls -l .git/refs/stash .git/logs/refs/stash
 ```
 
 _提交说明中有 WIP（work in progress），代表了工作区进度。而有 index on master 字样的提交，代表了暂存区的进度。每个进度的标识都是 `stash@{<n>}`_
+
+# Git 基本操作
+
+_现实中需应对各种情况，如，文件删除、文件复制、文件移动、目录的组织、二进制文件、误删文件的恢复_
+
+## 1. 合影留恋
+
+_在与之前实践遗留的数据告别前，可合影留恋。在 Git 里，留影用的命令叫做 tag，更专业的术语叫做“里程碑”。留过影之后，可以执行 `git describe` 命令将最新提交显示为一个易记的名称。_
+
+```bash
+# 打标签，即里程碑
+git tag -m "message" tag-name
+
+# 里程碑无非也是一个引用，通过创建tag对象来为当前版本库的状态进行“留影”
+ls .git/refs/tags/tag-name
+git rev-parse refs/tags/tag-name
+```
+
+## 2. 删除文件
+
+_本地删除不是真的删除_
+
+```bash
+# 直接在工作区删除文件
+rm filename
+
+# 通过以下命令，可以看到在暂存区、版本库中的文件仍然存在，并未删除
+git ls-files
+```
+
+_直接在工作区删除，对暂存区和版本库没有任何影响_
+
+```bash
+# 执行 git rm 命令删除文件，删除动作加入了暂存区
+git rm filename1 filename2 filename3...
+
+# 再执行提交后，对删除进行版本控制
+git commit -m "delete trash files"
+```
+
+_不用担心，文件只是在本版本库的最新提交中被删除了，在历史提交中尚在。可通过以下命令查看历史版本的文件列表_
+
+```bash
+git ls-files --with-tree=HEAD^
+
+# 查看历史版本中尚在的删除文件的内容
+git cat-file -p HEAD^:welcome.txt
+```
+
+## 3. 命令 git add -u 快速标记删除
+
+_因为命令`git rm`后面需写下所有要删除的文件名，太长了。我们可使用`git add -u`命令，将本地有改动（包括修改和删除）的文件标记到暂存区_
+
+## 4. 恢复删除的文件
+
+```bash
+# 以下3条命令都可以完成删除文件的恢复，最后一条最为简洁实用
+git cat-file -p HEAD~1:welcome.txt > welcome.txt
+
+git show HEAD~1:welcome.txt > welcome.txt
+
+git checkout HEAD~1 -- welcome.txt
+```
+
+```bash
+# 将工作区中的所有改动及新增文件添加到暂存区
+git add -A
+
+# 执行提交操作，文件welcome.txt又回来了
+git commit -m "restore file back"
+```
