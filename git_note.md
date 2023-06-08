@@ -479,3 +479,178 @@ _Git 忽略语法_
 - 如果名称的最前面是一个路径分隔符（/），表明要忽略的文件在此目录下，而非子目录的文件。
 - 如果名称的最后面是一个路径分隔符（/），表明要忽略的是整个目录，同名文件不忽略，否则同名的文件和目录都忽略。
 - 通过在名称的最前面添加一个感叹号（！），代表不忽略。
+
+# 历史穿梭
+
+## 1. 版本表示法 git rev-parse
+
+_命令`git rev-parse`是 Git 的一个底层命令，其功能非常丰富，很多 Git 脚本或工具都会用到这条命令。_
+
+```bash
+# 显示当前版本
+git describe
+
+# 上一条命令的输出也可以解析出正确的哈希值
+git rev-parse （git describe的输出）
+
+# 里程碑 A 实际指向的是一个 Tag 对象而非提交 ID
+git rev-parse A refs/tags/A
+
+# 显示提交本身的哈希值而非里程碑对象 A 的哈希值
+git rev-parse A^{} A^0 A^{commit}
+
+# 显示里程碑 A 对应的目录树，以下两种写法都可
+git rev-parse A^{tree} A:
+
+# 显示树里面的文件，以下两种写法均可
+git rev-parse A^{tree}:src/Makefile A:src/Makefile
+
+# 暂存区里的文件和头指针中的文件相同
+git rev-parse :gitg.png HEAD:gitg.png
+
+# 通过在提交日志中查找字符串的方式显示提交
+git rev-parse :/"Commit A"
+```
+
+## 2. 版本范围表示法 git rev-list
+
+```bash
+# 一个提交 ID 实际上就代表一个版本列表，含义是该版本开始的所有历史提交
+git rev-list --oneline A
+
+# 两个或多个版本，相当于每个版本单独使用时指代的列表的并集
+git rev-list --oneline D F
+
+# 在一个版本前面加上符号 ^ 含义是取反，即排除这个版本及其历史版本，参数顺序不重要
+git rev-list --oneline ^G D
+git rev-list --oneline D ^G
+
+# 功能同上。注意 .. 表示法前后的版本顺序很重要，以下两条命令结果截然不同！
+git rev-list --oneline G..D
+git rev-list --oneline D..G
+
+# 三点表示法，相当于两个版本共同能够访问到的除外
+git rev-list --oneline B...C
+
+# 某提交的历史提交，自身除外，用语法r1^@
+git rev-list --oneline B^@
+
+# 提交本身不包括其历史提交，用r1^!
+git rev-list --oneline B^!
+```
+
+## 3. 浏览日志 git log
+
+```bash
+# 显示最近的几条日志，n代表显示数量
+git log -n --oneline
+
+# 显示每次提交的具体改动
+git log -p -1
+
+# 显示每次提交的变更概要。在不需要知道具体改动而只想知道改动在哪些文件时可使用 --stat 参数
+git log --stat --oneline I..C
+
+# 查看和分析某一个提交，也可使用`git show`或`git cat-file`命令
+git show D
+git cat-file -p D^0
+```
+
+## 4. 差异比较 git diff
+
+```bash
+# 比较里程碑 A 和 B
+git diff A B
+
+# 显示不同版本间该路径下文件的差异
+git diff commit1 commit2 -- filename
+
+# Git 版本库之外的差异性比较，可比较二进制文件，非常强大！
+git diff path1 path2
+
+# 差异比较默认为逐行比较，使用 --word-diff 参数可逐词比较
+git diff --word-diff
+```
+
+## 5. 文件追溯 git blame
+
+_在软件开发过程中，当发现 bug 并定位到具体的代码时，Git 的文件追溯命令 `git blame` 可以指出是谁在什么时候，以及什么版本引入的此 bug_
+
+```bash
+# 逐行显示文件，并在每一行行首显示此行最早是在什么版本引入的，由谁引入的
+git blame filename
+
+# 查看某几行，使用 -L n,m 参数
+git blame -L 6,5 README
+```
+
+## 6. 二分查找 git bisect
+
+_前面的文件追溯是建立在 bug 已经定位的基础之上进行的。二分查找应用于坏版本与好版本之间的某次提交上出了问题，建立在测试的基础上的。_
+
+> Git 提供的 `git bisect`命令是基于版本库的，自动化的问题查找和定位工具，取代传统软件测试中针对软件发布版本的、无法定位到代码的、粗放式的测试方法。
+>
+> 二分查找流程
+>
+> 1. 工作区切换到已知的“好版本”和“坏版本”的中间一个版本。
+> 2. 执行测试，如果问题重现，则将版本库当前版本标记为“坏版本”，如果问题没有重现，则将当前版本标记为“好版本”。
+> 3. 重复 1-2，直至最终找到第一个导致问题出现的版本。
+
+_用代码来演示二分查找过程。该演示中，如 doc 目录中含文件 B.txt，表面此版本是“坏版本”，否则为“好版本”_
+
+```bash
+# 切换至 master 分支，这里是要测试的有问题的分支
+git checkout master
+
+# 开始二分查找
+git bisect start
+
+# 再次确认坏提交和好提交，以便标记正确
+git cat-file -t master:doc/B.txt    # 输出 blob
+git cat-file -t G:doc/B.txt         # 输出未找到该文件
+
+# 将当前版本（HEAD）标记为“坏提交”，将 G 版本标记为“好提交”
+git bisect bad
+git bisect good G
+
+# 自动定位到 C 提交。测试是否存在文件 B.txt
+git describe    # 输出 C
+ls doc/B.txt    # 输出未找到该文件
+
+# 标记当前版本（即 C 提交）为“好提交”
+git bisect good
+
+# 自动定位到 D 提交，测试后这也是一个“好提交”，标记当前版本（ D提交 ）为“好提交”
+git bisect good
+
+# 自动定位到 B 提交，这是一个“坏提交”
+git bisect bad
+
+# 自动定位到 E 提交，这是一个“好提交”。当标记 E 为“好提交”后，输出显示已成功定位到引入坏提交的最接近版本
+git bisect good
+
+# 最终定位的坏提交用引用 refs/bisect/bad 标识，用以下命令切换到该版本
+git checkout bisect/bad
+
+# 对bug定位和修复后，撤销二分查找在版本库中遗留的临时文件和引用。撤销二分查找后，版本库切换回执行二分查找之前所在的分支
+git bisect reset
+```
+
+_“好提交”标记成了“坏提交”，反之亦然，导致前面的查找过程前功尽弃，为此 Git 的二分查找提供了一个恢复查找进度的解决办法，操作如下：_
+
+```bash
+# 首先将二分查找日志保存在logfile文件中
+git bisect log > logfile
+
+# 编辑这个logfile文件，删除记录了错误动作的行，以井号开始的行是注释，并保存退出
+vim logfile
+
+# 结束正在进行的出错的二分查找
+git bisect reset
+
+# 通过日志文件logfile恢复进度，重启二分查找
+git bisect replay logfile
+
+# 此刻可以查看到再次回到标记错误前的位置了
+git describe
+```
