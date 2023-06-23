@@ -654,3 +654,187 @@ git bisect replay logfile
 # 此刻可以查看到再次回到标记错误前的位置了
 git describe
 ```
+
+# 改变历史
+
+应用场景：提交 tag 如图：A -> B -> C -> D -> E -> F
+
+## 时间旅行一
+
+第一幕：干掉 D，并将 E 和 F 重新嫁接到 C 上
+
+> 拣选指令 - `git cherry-pick`，其含义是从众多的提交中挑选出一个提交应用在当前的工作分支中。该命令需要提供一个提交 ID 作为参数，操作过程相当于将该提交导出为补丁文件，然后在当前 HEAD 上重放，形成无论内容还是提交说明都一致的提交。
+
+```bash
+# 干掉 D
+git checkout C
+
+# 执行拣选操作将E提交在当前HEAD上重放
+git cherry-pick E
+
+# 执行拣选操作将F提交在当前HEAD上重放
+git cherry-pick F
+
+# 将master分支重置到新的提交ID（即拣选后的最新提交上）
+git checkout master
+git reset --hard HEAD@{1}
+```
+
+在进入第二幕之前记得重新布置舞台
+
+```bash
+git reset --hard F
+```
+
+第二幕：坏蛋 D 被感化，融入社会
+
+```bash
+git checkout D
+
+# 悔棋两次，以便将 C 和 D 融合
+git reset --soft HEAD~2
+
+# 执行提交，提交说明重用 C 提交的提交说明
+git commit -C C
+
+# 执行拣选操作将E提交在当前HEAD上重放
+git cherry-pick E
+
+# 执行拣选操作将F提交在当前HEAD上重放
+git cherry-pick F
+
+# 将master分支重置到新的提交ID（即拣选后的最新提交上）
+git checkout master
+git reset --hard HEAD@{1}
+```
+
+## 时间旅行二
+
+> 命令 `git rebase` 是对提交执行变基操作，即可以实现将指定范围的提交“嫁接”到另外一个提交之上。命令格式 `git rebase --onto <newbase> <since> <till>`
+>
+> 变基的操作过程：
+>
+> 1. 首先会执行 `git checkout <till>`
+> 2. 将 `<since>..<till>` 所标识的提交范围写到一个临时文件中
+> 3. 将当前分支强制重置到 `<newbase>`
+> 4. 从保存在临时文件中的提交列表中，将提交逐一按顺序重新提交到重置之后的分支上
+> 5. 如果遇到提交已经在分支中包含，则跳过该提交
+> 6. 如果在提交过程中遇到冲突，则变基过程暂停。用户解决冲突后，执行 `git rebase --continue` 继续变基操作。或者执行 `git rebase --skip` 跳过此提交。或者执行 `git rebase --abort` 就此终止变基操作切换到变基前的分支上。
+
+第一幕：干掉 D，并将 E 和 F 变基到 C 上
+
+```bash
+# 变基操作，并将 master 分支指向变基后的提交上
+git rebase --onto C D
+git reset --hard HEAD@{1}
+
+# 重新布置舞台
+git checkout master
+git rest --hard F
+```
+
+第二幕：坏蛋 D 被感化，融入社会
+
+```bash
+git checkout D
+git reset --soft HEAD^^
+git commit -C C
+
+# 记住这个提交ID的最好方法，用里程碑
+git tag newbase
+
+# 执行变基操作，将 E 和 F 提交嫁接到 newbase 上
+git rebase --onto E^ master
+
+# 删除刚创建的tag
+git tag -d newbase
+```
+
+## 时间旅行三
+
+执行交互式变基操作，会将 `<since>..<till>` 的提交悉数罗列在一个文件中，然后自动打开一个编辑器来编辑这个文件。
+
+第一幕：干掉 D
+
+```bash
+# 执行交互式变基操作
+git rebase -i D^
+```
+
+自动用编辑器修改文件，删除需去除的提交。保存退出即可完成变基操作。
+
+第二幕：坏蛋 D 被感化，融入社会
+
+```bash
+git rebase -i C^
+```
+
+自动用编辑器修改文件，修改第二行（提交 D），将动作由 pick 修改为 squash。保存退出，自动开始变基操作，在执行到 squash 命令设定的提交时，进入提交前的日志编辑状态（显示 C 和 D 提交说明在一起了）。再次保存退出，即完成 squash 动作标识的提交合并及后续变基操作。
+
+## 丢弃历史
+
+思路：如果希望把里程碑 A 之前的历史提交全部清除，可以这样做。基于里程碑 A 对应的提交构造一个根提交（即没有父提交的提交），然后再将 master 分支在 A 之后的提交变基到新的根提交上，实现对历史提交的清除。
+
+由里程碑 A 对应的提交构造出一个根提交至少有两种方法：
+
+```bash
+# 第一种方法使用 `commit-tree` 命令
+echo "Commit from tree of tag A." | git commit-tree A^{tree}
+
+# 第二种方法使用 `git hash-object` 命令
+# 查看里程碑A指向的提交
+git cat-file commit A^0
+
+# 将上面的输出过滤掉以 parent 开头的行，并将结果保存到一个文件中
+git cat-file commit A^0 | sed -e '/^parent/ d' > tmpfile
+
+# 运行 `git hash-object` 命令，将文件 tmpfile 作为一个 commit 对象写入对象库
+git hash-object -t commit -w -- tmpfile
+
+# 执行变基，将 master 分支里程碑 A 之后的提交全部迁移到根提交上
+git rebase --onto <root-commit> A master
+```
+
+## 反转提交
+
+对历史的修改，对于一个人使用 Git 没有问题，但是如果多人协同就会有问题了。更改历史操作只能是针对自己的版本库，而无法修改他人的版本库。在这种情况下要想修正一个错误历史提交的正确做法是反转提交，即重新做一次新的提交，相当于用错误的历史提交来修正错误的历史提交。
+
+```bash
+git revert <commit-ID>
+```
+
+# Git 克隆
+
+> Git 使用 `git clone` 命令实现版本库克隆，主要有如下三种用法：
+>
+> 用法一： `git clone <repository> <directory>`
+>
+> 用法二： `git clone --bare <repository> <directory.git>`
+>
+> 用法三： `git clone --mirror <repository> <directory.git>`
+>
+> 用法 1 将 `<repository>` 指向的版本库创建一个克隆到 `<directory>` 目录。该目录相当于克隆版本库的工作区，文件都会检出，版本库位于工作区下的.git 目录中。
+>
+> 用法 2 和用法 3 创建的克隆版本库都不包含工作区，直接就是版本库的内容，这样的版本库称为裸版本库。一般约定俗成裸版本库的目录名以.git 为后缀。他们之间的区别是，用法 3 克隆出来的裸版本对上游版本库进行了注册，可以在裸版本库中使用 `git fetch` 命令和上游版本库进行持续同步。
+
+## 创建生产裸版本库
+
+之前执行 `git init` 命令初始化的版本库是带工作区的，我们可以使用 `git init --bare` 命令创建一个空的裸版本库。
+
+```bash
+# 创建裸版本库
+git init --bare /path/to/repos/demo-init.git
+
+# 空版本库没有内容，需通过 push 操作为其创建内容。注意，一定要带上分支名，否则无法推送
+git push /path/to/repos/demo-init.git master:master
+```
+
+此后的推送可以不带分支名了，因为远程版本库 `demo-init.git` 已经不再是空版本库了。
+
+# Git 库管理
+
+`git prune` 命令清除暂存区操作时引入的临时对象，对于使用重置命令抛弃的提交和文件需用 `git reflog` 命令中提供的 `--expire=<date>` 参数，强制让 `<date>` 之前的记录全部过期，会使得提交对应的 commit 对象、tree 对象和 blob 对象成为未被关联的 dangling 对象，可用 `git prune` 命令清除。
+
+`git gc` 命令更为常用，它好比 Git 版本库的管家，会对版本库进行一系列的优化。
+
+实际上，对于 1.6.6 及以后的版本库已经不需要手动执行 `git gc` 命令整理了。
