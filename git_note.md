@@ -42,14 +42,14 @@ git grep "工作区文件内容搜索"
 # 精简格式的状态输出
 git status -s
 
-# 查看提交记录
-git log -l
+# 查看3条提交记录
+git log -3
 
 # 显示版本库.git目录所在位置
 git rev-parse --git-dir
 
 # 显示工作区根目录
-git rev-parse --show-toplever
+git rev-parse --show-toplevel
 
 # 相对于工作区根目录的相对目录
 git rev-parse --show-prefix
@@ -72,8 +72,7 @@ git clone demo demo-copy
 
 # Git 暂存区
 
-> 暂存区市一个介于工作区和版本库的中间状态，当执行提交时，实际上
-> 是将暂存区的内容提交到版本库中，而 Git 的很多命令都会涉及暂存区概念。
+> 暂存区是一个介于工作区和版本库的中间状态，当执行提交时，实际上是将暂存区的内容提交到版本库中，而 Git 的很多命令都会涉及暂存区概念。
 
 ## 1. 区分工作区、暂存区和版本库之间文件差异
 
@@ -115,8 +114,7 @@ git cat-file -p id
 ```
 
 > 通过提交对象之间的相互关联，可以清楚的显示一条跟踪链，可通过
-> `git log --pretty=raw --graph id`命令查看。最早的那个
-> 提交没有 _parent_ 属性，所以跟踪链到此终结。
+> `git log --pretty=raw --graph id`命令查看。最早的那个提交没有 _parent_ 属性，所以跟踪链到此终结。
 
 ```bash
 # 查看工作区和暂存区是否有改动
@@ -137,7 +135,7 @@ _在当前版本库中，HEAD、master、refs/heads/master 具有相同的指向
 > - 使用 master，代表分支 master 中最新的提交，也可使用全称 refs/heads/master 或 heads/master。
 > - 使用 HEAD，代表版本库中最近的一次提交。
 > - 使用符号^可以用于指代父提交。如 HEAD^代表版本库中的上一次提交，即最近一次提交的父提交。
-> - 对于一个提交有多个父提交，可以在符号^后面用数字表示是第几个父提交。如 HEAD^2 即相当于 HEAD^^。
+> - 对于一个提交有多个父提交，可以在符号^后面用数字表示是第几个父提交。如 HEAD^^2 即相当于 HEAD^的多个父提交中的第二个父提交。
 > - 符号~<n>也可以用于指代祖先提交。如 a573106~5 即相当于 a573106^^^^^
 > - 提交所对应的树对象，可用如下语法访问：a573106^{tree}
 
@@ -255,11 +253,11 @@ touch detached-commit.txt
 git add detached-commit.txt
 git commit -m "commit in detached HEAD mode."
 
-# 此时可看到新的提交是建立在之前的提交基础上的
+# 此时可看到新的提交是建立在之前头指针的提交基础上的
 cat .git/HEAD
 ```
 
-_由于这个提交没有宝贝任何分支跟踪到，因此并不能保证这个提交会永久存在_
+_由于这个提交没有被任何分支跟踪到，因此并不能保证这个提交会永久存在_
 
 ## 2. 挽救分离头指针
 
